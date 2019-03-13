@@ -218,29 +218,40 @@ public final class Platform {
     return newMemory;
   }
 
-  /**
-   * Uses internal JDK APIs to allocate a DirectByteBuffer while ignoring the JVM's
-   * MaxDirectMemorySize limit (the default limit is too low and we do not want to require users
-   * to increase it).
-   */
-  public static ByteBuffer allocateDirectBuffer(int size) {
-    try {
-      long memory = allocateMemory(size);
-      ByteBuffer buffer = (ByteBuffer) DBB_CONSTRUCTOR.newInstance(memory, size);
-      if (CLEANER_CREATE_METHOD != null) {
+    /**
+     * Allocate a DirectByteBuffer, potentially bypassing the JVM's MaxDirectMemorySize limit.
+     */
+    public static ByteBuffer allocateDirectBuffer(int size) {
         try {
-          DBB_CLEANER_FIELD.set(buffer,
-              CLEANER_CREATE_METHOD.invoke(null, buffer, (Runnable) () -> freeMemory(memory)));
-        } catch (IllegalAccessException | InvocationTargetException e) {
-          throw new IllegalStateException(e);
+            if (CLEANER_CREATE_METHOD == null) {
+                // Can't set a Cleaner (see comments on field), so need to allocate via normal Java APIs
+                try {
+                    return ByteBuffer.allocateDirect(size);
+                } catch (OutOfMemoryError oome) {
+                    // checkstyle.off: RegexpSinglelineJava
+                    throw new OutOfMemoryError("Failed to allocate direct buffer (" + oome.getMessage() +
+                            "); try increasing -XX:MaxDirectMemorySize=... to, for example, your heap size");
+                    // checkstyle.on: RegexpSinglelineJava
+                }
+            }
+            // Otherwise, use internal JDK APIs to allocate a DirectByteBuffer while ignoring the JVM's
+            // MaxDirectMemorySize limit (the default limit is too low and we do not want to
+            // require users to increase it).l
+            long memory = allocateMemory(size);
+            ByteBuffer buffer = (ByteBuffer) DBB_CONSTRUCTOR.newInstance(memory, size);
+            try {
+                DBB_CLEANER_FIELD.set(buffer,
+                        CLEANER_CREATE_METHOD.invoke(null, buffer, (Runnable) () -> freeMemory(memory)));
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                freeMemory(memory);
+                throw new IllegalStateException(e);
+            }
+            return buffer;
+        } catch (Exception e) {
+            throwException(e);
         }
-      }
-      return buffer;
-    } catch (Exception e) {
-      throwException(e);
+        throw new IllegalStateException("unreachable");
     }
-    throw new IllegalStateException("unreachable");
-  }
 
   public static void setMemory(Object object, long offset, long size, byte value) {
     _UNSAFE.setMemory(object, offset, size, value);
