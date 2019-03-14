@@ -25,7 +25,7 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>spark-core_2.11</artifactId>
+  <artifactId>bnext-spark-core_2.11</artifactId>
   <properties>
     <sbt.project.name>core</sbt.project.name>
   </properties>
@@ -524,5 +524,16 @@
       </build>
     </profile>
   </profiles>
-
+  <distributionManagement>
+    <repository>
+      <id>releases</id>
+      <name>Releases</name>
+      <url>http://hfnexus01.b-next.de/nexus/content/repositories/releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>snapshots</id>
+      <name>Snapshots</name>
+      <url>http://hfnexus01.b-next.de/nexus/content/repositories/snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
 </project>

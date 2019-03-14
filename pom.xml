@@ -2882,4 +2882,16 @@
       <id>sparkr</id>
     </profile>
   </profiles>
+  <distributionManagement>
+    <repository>
+      <id>releases</id>
+      <name>Releases</name>
+      <url>http://hfnexus01.b-next.de/nexus/content/repositories/releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>snapshots</id>
+      <name>Snapshots</name>
+      <url>http://hfnexus01.b-next.de/nexus/content/repositories/snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
 </project>
